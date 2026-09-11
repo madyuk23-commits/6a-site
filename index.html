@@ -452,9 +452,9 @@
   .modal-tab.active{background:var(--ink); color:#fff; border-color:var(--ink);}
   .modal-field{margin-bottom:12px;}
   .modal-field label{display:block; font-size:11.5px; font-weight:800; color:#847C6B; margin-bottom:5px;}
-  .modal-field input{
+  .modal-field input, .modal-field textarea{
     width:100%; padding:10px 12px; border-radius:10px; border:1.5px solid var(--line);
-    font-family:'Nunito',sans-serif; font-size:14px;
+    font-family:'Nunito',sans-serif; font-size:14px; resize:vertical;
   }
   .modal-error{color:#C23B3B; font-size:12px; font-weight:700; margin:0 0 10px; min-height:1em;}
   .modal-actions{display:flex; gap:8px; margin-top:16px;}
@@ -505,6 +505,80 @@
     padding:4px 9px; font-size:12px; cursor:pointer;
   }
   .react-btn.mine{border-color:var(--brand-dark); background:#E4F2EC;}
+  .react-btn.pulse{animation:reactPulse .35s ease;}
+  @keyframes reactPulse{
+    0%{transform:scale(1);} 40%{transform:scale(1.25);} 100%{transform:scale(1);}
+  }
+
+  /* ---------- modal entrance animation ---------- */
+  .modal-mask.open .modal-box{animation:modalPop .28s cubic-bezier(.2,.9,.3,1.25);}
+  @keyframes modalPop{from{transform:scale(.9) translateY(8px); opacity:0;} to{transform:scale(1) translateY(0); opacity:1;}}
+
+  /* ---------- post card polish ---------- */
+  .post-card{transition:transform .22s ease, box-shadow .22s ease;}
+  .post-card:hover{transform:translateY(-5px); box-shadow:0 18px 34px rgba(32,29,25,.18);}
+  .post-media{cursor:zoom-in; transition:filter .2s ease;}
+  .post-media:hover{filter:brightness(.93);}
+  .post-card-top{display:flex; align-items:flex-start; justify-content:space-between; gap:6px;}
+  .post-card-actions{display:flex; gap:4px; flex:none;}
+  .card-icon-btn{
+    border:none; background:#F1ECDF; border-radius:8px; width:26px; height:26px;
+    font-size:12px; cursor:pointer; display:flex; align-items:center; justify-content:center;
+    transition:background .15s ease, transform .15s ease;
+  }
+  .card-icon-btn:hover{background:#E4DCC6; transform:scale(1.08);}
+  .card-icon-btn.danger:hover{background:#F3D2CE;}
+
+  /* ---------- rich text (discord-style) ---------- */
+  .rt-code{background:#EFE9DA; border-radius:4px; padding:1px 5px; font-family:monospace; font-size:12px;}
+  .rt-quote{display:block; border-left:3px solid var(--line); padding-left:8px; color:#847C6B; margin:2px 0;}
+  .rt-spoiler{background:#2A2620; color:transparent; border-radius:4px; padding:0 4px; cursor:pointer; transition:color .1s ease;}
+  .rt-spoiler.revealed{color:#EFE9DA;}
+
+  /* ---------- lightbox ---------- */
+  .lightbox{
+    position:fixed; inset:0; z-index:500; background:rgba(10,9,8,.92);
+    display:none; align-items:center; justify-content:center; padding:24px;
+    animation:none;
+  }
+  .lightbox.open{display:flex; animation:fadein .25s ease;}
+  .lightbox img, .lightbox video{
+    max-width:92vw; max-height:88vh; border-radius:8px;
+    box-shadow:0 30px 70px rgba(0,0,0,.6);
+    animation:modalPop .3s cubic-bezier(.2,.9,.3,1.2);
+  }
+  .lightbox-close{
+    position:absolute; top:18px; right:24px; color:#fff; font-size:26px; cursor:pointer;
+    width:42px; height:42px; display:flex; align-items:center; justify-content:center;
+    border-radius:50%; background:rgba(255,255,255,.12); transition:background .15s ease;
+  }
+  .lightbox-close:hover{background:rgba(255,255,255,.25);}
+
+  /* ---------- toasts ---------- */
+  #toast-stack{
+    position:fixed; bottom:22px; left:50%; transform:translateX(-50%); z-index:600;
+    display:flex; flex-direction:column; gap:8px; align-items:center;
+  }
+  .toast{
+    background:var(--ink); color:#fff; font-weight:700; font-size:12.5px;
+    padding:10px 18px; border-radius:999px; box-shadow:0 12px 26px rgba(0,0,0,.3);
+    animation:toastIn .25s ease;
+  }
+  .toast.out{animation:toastOut .25s ease forwards;}
+  @keyframes toastIn{from{opacity:0; transform:translateY(10px) scale(.95);} to{opacity:1; transform:translateY(0) scale(1);}}
+  @keyframes toastOut{to{opacity:0; transform:translateY(10px) scale(.95);}}
+
+  /* ---------- creator panel extras ---------- */
+  #creator-panel{animation:none;}
+  #creator-panel.open{animation:panelSlide .25s cubic-bezier(.2,.9,.3,1.15);}
+  @keyframes panelSlide{from{opacity:0; transform:translateX(-12px);} to{opacity:1; transform:translateX(0);}}
+  .cp-stats{display:flex; gap:8px; margin-bottom:12px;}
+  .cp-stat{background:#241F1A; border-radius:10px; padding:8px 10px; flex:1; text-align:center;}
+  .cp-stat b{display:block; font-family:'Unbounded',sans-serif; font-size:15px; color:var(--brand-2);}
+  .cp-stat span{font-size:9.5px; color:#A29A88; text-transform:uppercase;}
+  .cp-user.banned{opacity:.5;}
+  .cp-ban-tag{background:#8A3B34; color:#fff; font-size:9px; font-weight:900; border-radius:999px; padding:1px 6px; margin-left:5px;}
+  .cp-user-actions button.danger{background:#5A2620;}
 </style>
 </head>
 <body>
@@ -651,18 +725,18 @@
 
 <div class="modal-mask" id="post-modal">
   <div class="modal-box">
-    <h3>Новый пост</h3>
+    <h3 id="post-modal-title">Новый пост</h3>
     <p class="modal-sub">Заголовок, описание и медиа (фото / гиф / видео)</p>
     <div class="modal-field">
       <label>Название</label>
       <input id="post-title" type="text" maxlength="60">
     </div>
     <div class="modal-field">
-      <label>Описание</label>
-      <input id="post-desc" type="text" maxlength="200">
+      <label>Описание — **жирный**, *курсив*, __подчёркнутый__, ~~зачёркнутый~~, `код`, ||спойлер||, "&gt; цитата"</label>
+      <textarea id="post-desc" maxlength="500" rows="3"></textarea>
     </div>
     <div class="modal-field">
-      <label>Файл (фото / гиф / видео)</label>
+      <label id="post-file-label">Файл (фото / гиф / видео)</label>
       <input id="post-file" type="file" accept="image/*,video/*">
     </div>
     <p class="modal-error" id="post-error"></p>
@@ -672,6 +746,13 @@
     </div>
   </div>
 </div>
+
+<div class="lightbox" id="lightbox">
+  <span class="lightbox-close" id="lightbox-close">✕</span>
+  <div id="lightbox-content"></div>
+</div>
+
+<div id="toast-stack"></div>
 
 <script>
   // ---------- navigation ----------
@@ -944,19 +1025,37 @@
     }
     usersEl.innerHTML = 'Загрузка…';
     try{
-      const snap = await db.collection('users').get();
-      if(snap.empty){ usersEl.innerHTML = '<div style="opacity:.6">Пока нет зарегистрированных</div>'; return; }
+      const [usersSnap, albumSnap, awardsSnap] = await Promise.all([
+        db.collection('users').get(),
+        db.collection('postsAlbum').get(),
+        db.collection('postsAwards').get()
+      ]);
       const users = [];
-      snap.forEach(doc=> users.push({id: doc.id, ...doc.data()}));
-      usersEl.innerHTML = users.map(u=>`
-        <div class="cp-user">
-          <span class="cp-user-name">${u.username}</span>
+      usersSnap.forEach(doc=> users.push({id: doc.id, ...doc.data()}));
+      const admins = users.filter(u=>u.isAdmin).length;
+      const totalPosts = albumSnap.size + awardsSnap.size;
+
+      const statsHtml = `
+        <div class="cp-stats">
+          <div class="cp-stat"><b>${users.length}</b><span>Всего</span></div>
+          <div class="cp-stat"><b>${admins}</b><span>Админы</span></div>
+          <div class="cp-stat"><b>${totalPosts}</b><span>Постов</span></div>
+        </div>`;
+
+      if(!users.length){ usersEl.innerHTML = statsHtml + '<div style="opacity:.6">Пока нет зарегистрированных</div>'; return; }
+
+      usersEl.innerHTML = statsHtml + users.map(u=>`
+        <div class="cp-user ${u.banned?'banned':''}">
+          <span class="cp-user-name">${u.username}${u.banned?'<span class="cp-ban-tag">БАН</span>':''}</span>
           <div class="cp-user-actions">
             <button class="${u.isAdmin?'on':''}" data-act="toggle-admin" data-uid="${u.id}" data-cur="${u.isAdmin?1:0}">${u.isAdmin?'Админ ✓':'Сделать админом'}</button>
             <button data-act="rename" data-uid="${u.id}" data-name="${u.username}">✎</button>
+            <button data-act="toggle-ban" data-uid="${u.id}" data-cur="${u.banned?1:0}" class="${u.banned?'':'danger'}">${u.banned?'Разбанить':'Бан'}</button>
+            <button data-act="delete-user" data-uid="${u.id}" data-name="${u.username}" class="danger">🗑</button>
           </div>
         </div>
       `).join('');
+
       usersEl.querySelectorAll('button[data-act="toggle-admin"]').forEach(btn=>{
         btn.onclick = async ()=>{
           const uid = btn.dataset.uid;
@@ -965,8 +1064,20 @@
             await db.collection('users').doc(uid).update({isAdmin: !cur});
             if(currentUser && currentUser.uid === uid) currentUser.isAdmin = !cur;
             renderAuthBar(); updateAddButtons();
+            showToast(!cur ? 'Назначен админом' : 'Права админа сняты');
             openCreatorPanel();
-          }catch(e){ alert('Не удалось изменить права: ' + (e.message||e)); }
+          }catch(e){ showToast('Не удалось изменить права'); }
+        };
+      });
+      usersEl.querySelectorAll('button[data-act="toggle-ban"]').forEach(btn=>{
+        btn.onclick = async ()=>{
+          const uid = btn.dataset.uid;
+          const cur = btn.dataset.cur === '1';
+          try{
+            await db.collection('users').doc(uid).update({banned: !cur});
+            showToast(!cur ? 'Пользователь забанен' : 'Разбанен');
+            openCreatorPanel();
+          }catch(e){ showToast('Не удалось изменить бан'); }
         };
       });
       usersEl.querySelectorAll('button[data-act="rename"]').forEach(btn=>{
@@ -979,8 +1090,21 @@
           if(err){ alert(err); return; }
           try{
             await db.collection('users').doc(uid).update({username: newName});
+            showToast('Ник изменён');
             openCreatorPanel();
-          }catch(e){ alert('Не удалось переименовать: ' + (e.message||e)); }
+          }catch(e){ showToast('Не удалось переименовать'); }
+        };
+      });
+      usersEl.querySelectorAll('button[data-act="delete-user"]').forEach(btn=>{
+        btn.onclick = async ()=>{
+          const uid = btn.dataset.uid;
+          const name = btn.dataset.name;
+          if(!confirm(`Удалить профиль «${name}»? Это уберёт его из списка и снимет права (сам логин Firebase не удаляется).`)) return;
+          try{
+            await db.collection('users').doc(uid).delete();
+            showToast('Профиль удалён');
+            openCreatorPanel();
+          }catch(e){ showToast('Не удалось удалить'); }
         };
       });
     }catch(e){
@@ -988,16 +1112,85 @@
     }
   }
 
+  // ---------- toasts ----------
+  function showToast(msg){
+    const stack = document.getElementById('toast-stack');
+    if(!stack) return;
+    const t = document.createElement('div');
+    t.className = 'toast';
+    t.textContent = msg;
+    stack.appendChild(t);
+    setTimeout(()=>{
+      t.classList.add('out');
+      setTimeout(()=> t.remove(), 250);
+    }, 2200);
+  }
+
+  // ---------- rich text (discord-style) ----------
+  function escapeHtml(s){
+    return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  }
+  function formatRichText(raw){
+    if(!raw) return '';
+    let s = escapeHtml(raw);
+    s = s.replace(/`([^`\n]+)`/g, '<span class="rt-code">$1</span>');
+    s = s.replace(/\*\*([^\*\n]+)\*\*/g, '<b>$1</b>');
+    s = s.replace(/__([^_\n]+)__/g, '<u>$1</u>');
+    s = s.replace(/~~([^~\n]+)~~/g, '<s>$1</s>');
+    s = s.replace(/\|\|([^\|\n]+)\|\|/g, '<span class="rt-spoiler" onclick="this.classList.toggle(\'revealed\')">$1</span>');
+    s = s.replace(/\*([^\*\n]+)\*/g, '<i>$1</i>');
+    s = s.split('\n').map(line=>{
+      if(line.startsWith('&gt; ')) return '<span class="rt-quote">'+line.slice(5)+'</span>';
+      return line;
+    }).join('\n');
+    s = s.replace(/\n/g, '<br>');
+    return s;
+  }
+
+  // ---------- lightbox ----------
+  function openLightbox(url, isVideo, alt){
+    const box = document.getElementById('lightbox');
+    const content = document.getElementById('lightbox-content');
+    content.innerHTML = isVideo
+      ? `<video src="${url}" controls autoplay></video>`
+      : `<img src="${url}" alt="${alt||''}">`;
+    box.classList.add('open');
+  }
+  function closeLightbox(){
+    document.getElementById('lightbox').classList.remove('open');
+    document.getElementById('lightbox-content').innerHTML = '';
+  }
+  document.getElementById('lightbox-close').onclick = closeLightbox;
+  document.getElementById('lightbox').addEventListener('click', (e)=>{
+    if(e.target.id === 'lightbox') closeLightbox();
+  });
+  document.addEventListener('keydown', (e)=>{
+    if(e.key === 'Escape'){
+      closeLightbox();
+      document.getElementById('post-modal').classList.remove('open');
+    }
+  });
+
   // ---------- posts (альбом и достижения) ----------
   const REACTIONS = ['👍','❤️','😂','🔥','🎉'];
   let postModalCollection = null;
+  let editingPost = null; // {id, collectionName} or null = creating new
+  const feedCache = {postsAlbum: [], postsAwards: []};
 
-  function openPostModal(collectionName){
+  function collFeedId(collectionName){ return collectionName === 'postsAlbum' ? 'album-feed' : 'awards-feed'; }
+
+  function openPostModal(collectionName, post){
     postModalCollection = collectionName;
+    editingPost = post || null;
     document.getElementById('post-error').textContent = '';
-    document.getElementById('post-title').value = '';
-    document.getElementById('post-desc').value = '';
+    document.getElementById('post-modal-title').textContent = post ? 'Редактировать пост' : 'Новый пост';
+    document.getElementById('post-submit').textContent = post ? 'Сохранить' : 'Опубликовать';
+    document.getElementById('post-title').value = post ? post.title : '';
+    document.getElementById('post-desc').value = post ? post.desc : '';
     document.getElementById('post-file').value = '';
+    document.getElementById('post-file-label').textContent = post
+      ? 'Новый файл (необязательно — оставьте пустым, чтобы сохранить прежний)'
+      : 'Файл (фото / гиф / видео)';
     document.getElementById('post-modal').classList.add('open');
   }
   document.getElementById('album-add-btn').onclick = ()=> openPostModal('postsAlbum');
@@ -1013,28 +1206,52 @@
     const fileInput = document.getElementById('post-file');
     const file = fileInput.files[0];
     if(!title){ errEl.textContent = 'Введите название'; return; }
-    if(!file){ errEl.textContent = 'Выберите файл'; return; }
-    if(file.size > MAX_FILE_BYTES){
+    if(!editingPost && !file){ errEl.textContent = 'Выберите файл'; return; }
+    if(file && file.size > MAX_FILE_BYTES){
       errEl.textContent = `Файл слишком большой (лимит ~${Math.round(MAX_FILE_BYTES/1024)} КБ — это ограничение базы данных Firestore на один документ; для видео нужен отдельный сервис хранения файлов)`;
       return;
     }
-    const reader = new FileReader();
-    reader.onload = async ()=>{
+
+    const finish = async (mediaData, mediaType)=>{
       try{
-        await db.collection(postModalCollection).add({
-          title, desc, mediaData: reader.result, mediaType: file.type,
-          author: currentUser.username, authorUid: currentUser.uid,
-          createdAt: firebase.firestore.FieldValue.serverTimestamp(),
-          reactions: {}
-        });
+        if(editingPost){
+          const update = {title, desc};
+          if(mediaData){ update.mediaData = mediaData; update.mediaType = mediaType; }
+          await db.collection(postModalCollection).doc(editingPost.id).update(update);
+          showToast('Пост обновлён');
+        } else {
+          await db.collection(postModalCollection).add({
+            title, desc, mediaData, mediaType,
+            author: currentUser.username, authorUid: currentUser.uid,
+            createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+            reactions: {}
+          });
+          showToast('Пост опубликован');
+        }
         document.getElementById('post-modal').classList.remove('open');
-        loadFeed(postModalCollection, postModalCollection === 'postsAlbum' ? 'album-feed' : 'awards-feed');
+        loadFeed(postModalCollection, collFeedId(postModalCollection));
       }catch(e){
         errEl.textContent = 'Не удалось сохранить пост: ' + (e.message||e);
       }
     };
-    reader.readAsDataURL(file);
+
+    if(file){
+      const reader = new FileReader();
+      reader.onload = ()=> finish(reader.result, file.type);
+      reader.readAsDataURL(file);
+    } else {
+      finish(null, null);
+    }
   };
+
+  async function deletePost(collectionName, postId){
+    if(!confirm('Удалить этот пост?')) return;
+    try{
+      await db.collection(collectionName).doc(postId).delete();
+      showToast('Пост удалён');
+      loadFeed(collectionName, collFeedId(collectionName));
+    }catch(e){ showToast('Не удалось удалить пост'); }
+  }
 
   async function loadFeed(collectionName, containerId){
     const el = document.getElementById(containerId);
@@ -1043,42 +1260,69 @@
     try{
       const snap = await db.collection(collectionName).orderBy('createdAt', 'desc').get();
       if(snap.empty){
+        feedCache[collectionName] = [];
         el.innerHTML = '<p class="soon-text" style="font-size:clamp(28px,4.5vw,46px);">Скоро будет...</p>';
         return;
       }
       const posts = [];
       snap.forEach(doc=> posts.push({id: doc.id, ...doc.data()}));
-      el.innerHTML = '<div class="post-grid">' + posts.map(p=>renderPostCard(p)).join('') + '</div>';
-      posts.forEach(p=>wirePostReactions(p, collectionName));
+      feedCache[collectionName] = posts;
+      el.innerHTML = '<div class="post-grid">' + posts.map(p=>renderPostCard(p, collectionName)).join('') + '</div>';
+      posts.forEach(p=>wirePostCard(p, collectionName));
     }catch(e){
       el.innerHTML = '<div class="empty-feed">Не удалось загрузить: ' + (e.message||e) + '</div>';
     }
   }
 
-  function renderPostCard(p){
-    const isVideo = (p.mediaType||'').startsWith('video');
-    const mediaTag = isVideo
-      ? `<video class="post-media" src="${p.mediaData}" controls muted></video>`
-      : `<img class="post-media" src="${p.mediaData}" alt="${p.title}">`;
-    const date = p.createdAt && p.createdAt.toDate ? p.createdAt.toDate().toLocaleDateString('ru-RU') : '';
+  function renderReactions(p){
     const counts = {};
     Object.values(p.reactions || {}).forEach(e=> counts[e] = (counts[e]||0)+1);
     const mine = currentUser ? (p.reactions||{})[currentUser.uid] : null;
-    const reactHtml = REACTIONS.map(e=>{
+    return REACTIONS.map(e=>{
       const c = counts[e] || 0;
       const isMine = mine === e;
       return `<button class="react-btn ${isMine?'mine':''}" data-post="${p.id}" data-emoji="${e}">${e}${c?' '+c:''}</button>`;
     }).join('');
+  }
+
+  function renderPostCard(p, collectionName){
+    const isVideo = (p.mediaType||'').startsWith('video');
+    const mediaTag = isVideo
+      ? `<video class="post-media" data-post="${p.id}" src="${p.mediaData}" muted></video>`
+      : `<img class="post-media" data-post="${p.id}" src="${p.mediaData}" alt="${p.title}">`;
+    const date = p.createdAt && p.createdAt.toDate ? p.createdAt.toDate().toLocaleDateString('ru-RU') : '';
+    const canEdit = currentUser && currentUser.uid === p.authorUid;
+    const canDelete = currentUser && (currentUser.uid === p.authorUid || currentUser.username === OWNER_NICKNAME);
+    const actionsHtml = (canEdit || canDelete) ? `
+      <div class="post-card-actions">
+        ${canEdit ? `<button class="card-icon-btn" data-act="edit" data-post="${p.id}" title="Редактировать">✎</button>` : ''}
+        ${canDelete ? `<button class="card-icon-btn danger" data-act="delete" data-post="${p.id}" title="Удалить">🗑</button>` : ''}
+      </div>` : '';
     return `
       <div class="post-card">
         ${mediaTag}
         <div class="post-body">
-          <p class="post-title">${p.title}</p>
-          ${p.desc ? `<p class="post-desc">${p.desc}</p>` : ''}
+          <div class="post-card-top">
+            <p class="post-title">${p.title}</p>
+            ${actionsHtml}
+          </div>
+          ${p.desc ? `<p class="post-desc">${formatRichText(p.desc)}</p>` : ''}
           <p class="post-meta">${p.author}${date ? ' · '+date : ''}</p>
-          <div class="post-reactions">${reactHtml}</div>
+          <div class="post-reactions" data-post-reactions="${p.id}">${renderReactions(p)}</div>
         </div>
       </div>`;
+  }
+
+  function wirePostCard(p, collectionName){
+    const media = document.querySelector(`.post-media[data-post="${p.id}"]`);
+    if(media){
+      media.addEventListener('click', ()=> openLightbox(p.mediaData, (p.mediaType||'').startsWith('video'), p.title));
+    }
+    const editBtn = document.querySelector(`.card-icon-btn[data-act="edit"][data-post="${p.id}"]`);
+    if(editBtn) editBtn.onclick = ()=> openPostModal(collectionName, p);
+    const delBtn = document.querySelector(`.card-icon-btn[data-act="delete"][data-post="${p.id}"]`);
+    if(delBtn) delBtn.onclick = ()=> deletePost(collectionName, p.id);
+    wirePostReactions(p, collectionName);
   }
 
   function wirePostReactions(p, collectionName){
@@ -1086,6 +1330,23 @@
       btn.onclick = async ()=>{
         if(!currentUser){ openAuthModal(); return; }
         const emoji = btn.dataset.emoji;
+        btn.classList.add('pulse');
+        setTimeout(()=> btn.classList.remove('pulse'), 350);
+
+        // оптимистично обновляем сразу, не дожидаясь ответа сервера
+        const cached = feedCache[collectionName].find(x=>x.id===p.id);
+        if(cached){
+          cached.reactions = cached.reactions || {};
+          if(cached.reactions[currentUser.uid] === emoji){
+            delete cached.reactions[currentUser.uid];
+          } else {
+            cached.reactions[currentUser.uid] = emoji;
+          }
+          const holder = document.querySelector(`[data-post-reactions="${p.id}"]`);
+          if(holder) holder.innerHTML = renderReactions(cached);
+          wirePostReactions(cached, collectionName);
+        }
+
         try{
           const ref = db.collection(collectionName).doc(p.id);
           const doc = await ref.get();
@@ -1097,7 +1358,6 @@
             reactions[currentUser.uid] = emoji;
           }
           await ref.update({reactions});
-          loadFeed(collectionName, collectionName === 'postsAlbum' ? 'album-feed' : 'awards-feed');
         }catch(e){}
       };
     });
