@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>6 «А» — галерея класса</title>
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 48 48'%3E%3Cpath d='M24 3 L44 12 V24 C44 35 35.5 42 24 45 C12.5 42 4 35 4 24 V12 Z' fill='%231F8A70' stroke='%23201D19' stroke-width='2'/%3E%3Ctext x='24' y='29' font-family='Arial,sans-serif' font-size='14' font-weight='700' fill='%23FAF6EC' text-anchor='middle'%3E6А%3C/text%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Unbounded:wght@500;700;900&family=Nunito:wght@400;600;700;800&family=Caveat:wght@500;700&family=Shadows+Into+Light&family=Bangers&family=Press+Start+2P&family=Playfair+Display:ital,wght@0,600;1,600&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/firebase/10.12.2/firebase-app-compat.min.js"></script>
@@ -958,11 +959,15 @@
     const n = normalizeForFilter(s);
     return BAD_WORDS.some(w=>n.includes(w));
   }
+  function normalizeNick(nick){
+    return (nick || '').trim().replace(/\s+/g, ' ');
+  }
   function validateNickname(nick){
     if(!nick || nick.length < 2 || nick.length > 20) return "Ник — от 2 до 20 символов";
-    if(/\s/.test(nick)) return "Ник без пробелов";
+    if(/^[\s.]|[\s.]$/.test(nick)) return "Ник не должен начинаться или заканчиваться пробелом или точкой";
+    if(/[\s.]{2,}/.test(nick)) return "Без подряд идущих пробелов/точек";
     if(/[a-zA-Z]/.test(nick)) return "Ник только кириллицей, без английских букв";
-    if(!/^[а-яёА-ЯЁ0-9_]+$/.test(nick)) return "Только буквы, цифры и _";
+    if(!/^[а-яёА-ЯЁ0-9_ .]+$/.test(nick)) return "Только буквы, цифры, пробел, точка и _";
     if(containsBadWord(nick)) return "Ник содержит недопустимые слова";
     return null;
   }
@@ -970,7 +975,12 @@
     if(!pw || pw.length < 6) return "Пароль — минимум 6 символов (так требует Firebase)";
     return null;
   }
-  function nickToEmail(nick){ return nick + EMAIL_DOMAIN; }
+  // email не поддерживает пробелы — превращаем ник в безопасный слаг только для входа,
+  // на экране везде показываем настоящий ник с пробелами и точками как есть
+  function nickToEmail(nick){
+    const slug = normalizeNick(nick).replace(/\s+/g, '_');
+    return slug + EMAIL_DOMAIN;
+  }
 
   let currentUser = null; // {username, isAdmin, uid}
 
@@ -1030,7 +1040,7 @@
   document.getElementById('auth-submit').onclick = async ()=>{
     const errEl = document.getElementById('auth-error');
     errEl.textContent = '';
-    const nick = document.getElementById('auth-username').value.trim();
+    const nick = normalizeNick(document.getElementById('auth-username').value);
     const pw = document.getElementById('auth-password').value;
 
     if(authMode === 'register'){
@@ -1169,8 +1179,10 @@
         btn.onclick = async ()=>{
           const uid = btn.dataset.uid;
           const oldName = btn.dataset.name;
-          const newName = prompt('Новый ник для '+oldName+':', oldName);
-          if(!newName || newName === oldName) return;
+          const newNameRaw = prompt('Новый ник для '+oldName+':', oldName);
+          if(!newNameRaw) return;
+          const newName = normalizeNick(newNameRaw);
+          if(newName === oldName) return;
           const err = validateNickname(newName);
           if(err){ alert(err); return; }
           try{
