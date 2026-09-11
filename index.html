@@ -32,6 +32,7 @@
     --brand-2:#F2B705;
     --line:#E5DDCB;
     --radius:18px;
+    --header-h:76px;
   }
   *{box-sizing:border-box;}
   html{scroll-behavior:smooth; width:100%; height:100%;}
@@ -87,7 +88,7 @@
     content:"🕒"; font-size:13px;
   }
 
-  main{min-height:calc(100vh - 76px); width:100%; display:flex; flex-direction:column;}
+  main{min-height:calc(100vh - var(--header-h)); width:100%; display:flex; flex-direction:column;}
   .view{display:none; animation:fadein .5s cubic-bezier(.2,.7,.3,1); flex:1; width:100%;}
   .view.active{display:flex; flex-direction:column;}
   .view.active > *:not(.egg-overlay){flex:1; display:flex; flex-direction:column;}
@@ -579,6 +580,90 @@
   .cp-user.banned{opacity:.5;}
   .cp-ban-tag{background:#8A3B34; color:#fff; font-size:9px; font-weight:900; border-radius:999px; padding:1px 6px; margin-left:5px;}
   .cp-user-actions button.danger{background:#5A2620;}
+
+  /* ============================================================
+     АВТОМАТИЧЕСКАЯ АДАПТАЦИЯ ПОД УСТРОЙСТВО
+     Сайт сам определяет тип экрана (через CSS media query — это
+     и есть "определение устройства" в браузере, без плагинов) и
+     перестраивает шапку, панели, таблицы и сетки. Высота шапки
+     дополнительно измеряется в JS и передаётся в --header-h, чтобы
+     контент никогда не наезжал на шапку, даже если она переносится
+     на 2–3 строки на маленьком экране.
+  ============================================================ */
+  @media (max-width: 720px){
+    header.shell{
+      padding:10px 14px;
+      gap:10px;
+      flex-wrap:wrap;
+    }
+    .brand-text span{display:none;}
+    .emblem{width:36px; height:36px;}
+    .brand-text b{font-size:15px;}
+
+    nav.tabs{
+      order:3;
+      width:100%;
+      flex-wrap:nowrap;
+      overflow-x:auto;
+      -webkit-overflow-scrolling:touch;
+      scrollbar-width:none;
+      gap:6px;
+      padding-bottom:2px;
+    }
+    nav.tabs::-webkit-scrollbar{display:none;}
+    .tabbtn{flex:none; padding:7px 12px 6px; font-size:12px;}
+    .tabbtn small{font-size:8.5px;}
+
+    .header-clock{display:none;}
+    .auth-bar{order:2; margin-left:auto;}
+    .auth-user{padding:5px 6px 5px 10px; font-size:11.5px;}
+    .auth-btn{padding:6px 11px; font-size:11.5px;}
+
+    .hero{padding:32px 16px 46px;}
+    .stat-row{gap:8px;}
+    .stat{padding:10px 14px; min-width:84px;}
+    .stat b{font-size:18px;}
+    .style-strip{gap:7px;}
+    .chip{padding:8px 13px; font-size:12px;}
+
+    .board{padding:20px 16px;}
+    .duty-grid{grid-template-columns:1fr; gap:12px;}
+
+    .comic-grid, .polaroid-grid, .post-grid{
+      grid-template-columns:repeat(auto-fill,minmax(150px,1fr));
+      gap:12px;
+    }
+    .comic-card{padding:12px 10px 10px;}
+    .comic-avatar{width:58px; height:58px; font-size:19px;}
+    .comic-name{font-size:16px;}
+
+    .pixel-wrap{padding:22px 14px 44px;}
+    .pixel-table{min-width:520px; font-size:8px;}
+    .pixel-table th, .pixel-table td{padding:7px 5px;}
+
+    .modal-box{padding:20px; max-width:94vw;}
+    .modal-tab{padding:7px; font-size:11.5px;}
+
+    #creator-panel{
+      left:10px; right:10px; top:10px;
+      width:auto; max-width:none;
+      max-height:75vh;
+    }
+
+    .egg-card{max-width:88vw;}
+    .lightbox{padding:12px;}
+    .lightbox-close{top:10px; right:10px; width:36px; height:36px; font-size:20px;}
+
+    .water-wrap{padding:24px 16px 50px;}
+    .soon-text{font-size:clamp(26px,8vw,40px);}
+  }
+
+  @media (max-width: 400px){
+    .comic-grid, .polaroid-grid, .post-grid{
+      grid-template-columns:1fr 1fr;
+    }
+    .hero h1{font-size:clamp(28px,9vw,40px);}
+  }
 </style>
 </head>
 <body>
@@ -1424,6 +1509,28 @@
   }
   updateClocks();
   setInterval(updateClocks, 15000);
+
+  // ---------- автоопределение устройства и подгонка шапки ----------
+  function applyDeviceClass(){
+    const isMobile = window.matchMedia('(max-width: 720px)').matches;
+    const isTouch = ('ontouchstart' in window) || navigator.maxTouchPoints > 0;
+    document.body.classList.toggle('is-mobile', isMobile);
+    document.body.classList.toggle('is-desktop', !isMobile);
+    document.body.classList.toggle('is-touch', isTouch);
+  }
+  function syncHeaderHeight(){
+    const header = document.querySelector('header.shell');
+    if(!header) return;
+    document.documentElement.style.setProperty('--header-h', header.offsetHeight + 'px');
+  }
+  applyDeviceClass();
+  syncHeaderHeight();
+  window.addEventListener('resize', ()=>{ applyDeviceClass(); syncHeaderHeight(); });
+  window.addEventListener('orientationchange', ()=> setTimeout(syncHeaderHeight, 200));
+  const headerEl = document.querySelector('header.shell');
+  if(headerEl && window.ResizeObserver){
+    new ResizeObserver(syncHeaderHeight).observe(headerEl);
+  }
 </script>
 </body>
 </html>
