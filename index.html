@@ -922,7 +922,6 @@
       <div class="class-glow glow-one"></div>
       <div class="class-glow glow-two"></div>
       <div class="class-heading">
-        <span class="class-kicker">6 «А» · SECRET AREA</span>
         <h2 class="comic-title">НАШ КЛАСС!</h2>
         <p class="comic-sub">23 супергероя одного кабинета — 6 «А».</p>
       </div>
@@ -1265,16 +1264,29 @@
   burgerSecret.addEventListener('click', ()=>{
     eggClicks++;
     clearTimeout(eggClickTimer);
+
     if(eggClicks === 5){
       eggClicks = 0;
       eggOverlay.classList.add('open');
       return;
     }
-    eggClickTimer = setTimeout(()=>{ eggClicks = 0; }, 1800);
+
+    eggClickTimer = setTimeout(()=>{
+      eggClicks = 0;
+    }, 1800);
   });
-  document.getElementById('egg-close').addEventListener('click', ()=> eggOverlay.classList.remove('open'));
-  eggOverlay.addEventListener('click', (e)=>{ if(e.target === eggOverlay) eggOverlay.classList.remove('open'); });
-  document.addEventListener('keydown', (e)=>{ if(e.key === 'Escape') eggOverlay.classList.remove('open'); });
+
+  document.getElementById('egg-close').addEventListener('click', ()=>{
+    eggOverlay.classList.remove('open');
+  });
+
+  eggOverlay.addEventListener('click', (e)=>{
+    if(e.target === eggOverlay) eggOverlay.classList.remove('open');
+  });
+
+  document.addEventListener('keydown', (e)=>{
+    if(e.key === 'Escape') eggOverlay.classList.remove('open');
+  });
 
 
 
@@ -1917,8 +1929,10 @@
         }catch(e){
           console.error('reaction:', e);
           const msg = (e && e.code === 'permission-denied')
-            ? 'Firebase отклонил реакцию (permission-denied). Проверьте Rules.'
-            : 'Не удалось сохранить реакцию: ' + (e && e.message ? e.message : 'неизвестная ошибка');
+            ? 'Firebase отклонил реакцию (permission-denied). Проверьте опубликованные Rules.'
+            : 'Не удалось сохранить реакцию'
+              + (e && e.code ? ' [' + e.code + ']' : '')
+              + (e && e.message ? ': ' + e.message : '.');
           showToast(msg);
           // Reload the post so optimistic/stale UI never remains after a failed write.
           try{ loadFeed(collectionName, collFeedId(collectionName)); }catch(_){ }
